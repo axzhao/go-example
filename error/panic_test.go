@@ -1,15 +1,15 @@
-package panic
+package error
 
 import "fmt"
 
 func ExamplePanic() {
-	n := foo()
+	n := foo2()
 	fmt.Println("main received", n)
 
 	// Output:
 }
 
-func foo() (m int) {
+func foo2() (m int) {
 	defer func() {
 		if err := recover(); err != nil {
 			fmt.Println("panic error", err)
