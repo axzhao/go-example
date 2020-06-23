@@ -3,9 +3,11 @@ package main
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"log"
 	"net/http"
-	"fmt"
+
+	"github.com/graph-gophers/dataloader"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -31,7 +33,14 @@ const schemaString = `
 	`
 
 // resolver
-type RootResolver struct{}
+
+type options struct {
+	Logger int
+	DB     int
+}
+type RootResolver struct {
+	Global options
+}
 
 type UserArgs struct {
 	ID graphql.ID
@@ -39,7 +48,7 @@ type UserArgs struct {
 
 func (r *RootResolver) User(ctx context.Context, args *UserArgs) (*UserResolver, error) {
 	var user *User
-	for _, u := range mockUser {
+	for _, u := range mockUsers {
 		if string(args.ID) == u.id {
 			user = u
 		}
@@ -47,61 +56,10 @@ func (r *RootResolver) User(ctx context.Context, args *UserArgs) (*UserResolver,
 	return &UserResolver{u: user}, nil
 }
 
-// User
-type User struct {
-	id   string
-	name string
-}
-type UserResolver struct {
-	u *User
-}
-
-func (r *UserResolver) ID() *graphql.ID {
-	id := graphql.ID(r.u.id)
-	return &id
-}
-func (r *UserResolver) Name() *string { return &r.u.name }
-func (r *UserResolver) Friends(ctx context.Context) ([]*FriendResolver, error) {
-	var friends []*Friend
-	for _, f := range mockUserFriends {
-		if f.userId == r.u.id {
-			friends = append(friends, f)
-		}
-	}
-	var resolvers []*FriendResolver
-	for _, friend := range friends {
-		resolvers = append(resolvers, &FriendResolver{f: friend})
-	}
-	return resolvers, nil
-}
-
-func 
-
-// Friend
-type Friend struct {
-	userId   string
-	friendId string
-}
-type FriendResolver struct {
-	f *Friend
-}
-
-var CallTimes int
-
-func (r *FriendResolver) FriendId() *string { return &r.f.friendId }
-func (r *FriendResolver) User(ctx context.Context) (*UserResolver, error) {
-	CallTimes++
-	var user *User
-	for _, u := range mockUser {
-		if r.f.friendId == u.id {
-			user = u
-		}
-	}
-	return &UserResolver{u: user}, nil
-}
+var CallTimes1, CallTimes2 int
 
 // mock
-var mockUser = []*User{
+var mockUsers = []*User{
 	&User{id: "1", name: "111"},
 	&User{id: "2", name: "222"},
 	&User{id: "3", name: "333"},
@@ -123,11 +81,18 @@ var mockUserFriends = []*Friend{
 func main() {
 	withContext := func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			dls := DataLoaders{}
+			cache := NewCache()
+			for _, v := range defaultLoaders {
+				loader := dataloader.NewBatchedLoader(v.Batch, dataloader.WithCache(cache))
+				dls[v.Key()] = loader
+			}
+			c := &Context{Values: make(map[string]interface{}), Loaders: dls}
 			ctx := r.Context()
-			ctx = context.WithValue(ctx, GraphqlContextKey, loader)
-
+			ctx = context.WithValue(ctx, GraphqlContextKey, c)
 			h.ServeHTTP(w, r.WithContext(ctx))
-			fmt.Println(CallTimes)
+			fmt.Println("1: call user get friends ", CallTimes1)
+			fmt.Println("2: call friend get user", CallTimes2)
 		})
 	}
 
@@ -146,8 +111,6 @@ func main() {
 	log.Fatal(http.ListenAndServe(":9000", nil))
 }
 
-
-
 // query {
 // 	user(id: 1) {
 // 	  id,
@@ -161,4 +124,3 @@ func main() {
 // 	  }
 // 	}
 //   }
-  

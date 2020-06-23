@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"log"
+	"fmt"
 	"net/http"
 
 	graphql "github.com/graph-gophers/graphql-go"
@@ -46,6 +47,11 @@ func (r *RootResolver) User(ctx context.Context, args *UserArgs) (*UserResolver,
 	return &UserResolver{u: user}, nil
 }
 
+// xxx
+
+var CallTimes1, CallTimes2 int
+
+
 // User
 type User struct {
 	id   string
@@ -61,6 +67,7 @@ func (r *UserResolver) ID() *graphql.ID {
 }
 func (r *UserResolver) Name() *string { return &r.u.name }
 func (r *UserResolver) Friends(ctx context.Context) ([]*FriendResolver, error) {
+	CallTimes1++
 	var friends []*Friend
 	for _, f := range mockUserFriends {
 		if f.userId == r.u.id {
@@ -85,6 +92,7 @@ type FriendResolver struct {
 
 func (r *FriendResolver) FriendId() *string { return &r.f.friendId }
 func (r *FriendResolver) User(ctx context.Context) (*UserResolver, error) {
+	CallTimes2++
 	var user *User
 	for _, u := range mockUser {
 		if r.f.friendId == u.id {
@@ -115,8 +123,17 @@ var mockUserFriends = []*Friend{
 
 // main
 func main() {
+	withContext := func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			h.ServeHTTP(w, r.WithContext(ctx))
+			fmt.Println("1: call user get friends ", CallTimes1)
+			fmt.Println("2: call friend get user", CallTimes2)
+		})
+	}
+
 	schema := graphql.MustParseSchema(schemaString, &RootResolver{})
-	http.Handle("/graphql", &relay.Handler{Schema: schema})
+	http.Handle("/graphql", withContext(&relay.Handler{Schema: schema}))
 
 	// debug
 	debugPage := bytes.Replace(GraphiQLPage, []byte("fetch('/'"), []byte("fetch('/graphql'"), -1)
@@ -146,3 +163,8 @@ func main() {
 // 	}
 //   }
   
+// 2020/06/18 11:39:15 run graphql server, :9000
+// 1: call user get friends  1
+// 2: call friend get user 2
+// 1: call user get friends  2
+// 2: call friend get user 4
