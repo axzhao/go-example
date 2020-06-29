@@ -14,8 +14,8 @@ type User struct {
 	name string
 }
 type UserResolver struct {
-	u    *User
-	root *RootResolver
+	u *User
+	// root *RootResolver
 }
 
 func (r *UserResolver) ID() *graphql.ID {

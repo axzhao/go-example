@@ -12,8 +12,8 @@ type Friend struct {
 	friendId string
 }
 type FriendResolver struct {
-	f    *Friend
-	root *RootResolver
+	f *Friend
+	// root *RootResolver
 }
 
 func (r *FriendResolver) FriendId() *string { return &r.f.friendId }
