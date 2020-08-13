@@ -1,8 +1,15 @@
-package bits
+package basic
 
 import (
 	"testing"
 )
+
+type Bits uint8
+
+func Set(b, flag Bits) Bits       { return b | flag }
+func Unset(b, flag Bits) Bits     { return b &^ flag }
+func (b Bits) Has(flag Bits) bool { return b&flag != 0 }
+
 
 func TestBits(t *testing.T) {
 	const (

@@ -11,6 +11,8 @@ func ExampleSlice() {
 	fmt.Println(c == nil, len(c), cap(c), append(c, 1))
 	d := make([]int, 5)
 	fmt.Println(d == nil, len(d), cap(d), append(d, 1))
+	e := make([]int, 0, 5)
+	fmt.Println(e == nil, len(e), cap(e), append(e, 1))
 	// Output:
 }
 

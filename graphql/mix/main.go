@@ -65,6 +65,14 @@ var mockUsers = []*User{
 	&User{id: "3", name: "333"},
 	&User{id: "4", name: "444"},
 	&User{id: "5", name: "555"},
+	&User{id: "6", name: "555"},
+	&User{id: "7", name: "555"},
+	&User{id: "8", name: "555"},
+	&User{id: "9", name: "555"},
+	&User{id: "10", name: "555"},
+	&User{id: "11", name: "555"},
+	&User{id: "12", name: "555"},
+	&User{id: "13", name: "555"},
 }
 var mockUserFriends = []*Friend{
 	&Friend{userId: "1", friendId: "2"},
